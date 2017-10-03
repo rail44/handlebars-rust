@@ -357,6 +357,7 @@
 <span id="312">312</span>
 <span id="313">313</span>
 <span id="314">314</span>
+<span id="315">315</span>
 </pre><pre class="rust ">
 <span class="doccomment">//! # Handlebars</span>
 <span class="doccomment">//!</span>
@@ -560,14 +561,14 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! ```</span>
 <span class="doccomment">//! use std::io::Write;</span>
-<span class="doccomment">//! use handlebars::{Handlebars, HelperDef, RenderError, RenderContext, Helper, Context, JsonRender};</span>
+<span class="doccomment">//! use handlebars::{Handlebars, HelperDef, RenderContext, Helper, Context, JsonRender, HelperResult};</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! // implement by a structure impls HelperDef</span>
 <span class="doccomment">//! #[derive(Clone, Copy)]</span>
 <span class="doccomment">//! struct SimpleHelper;</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! impl HelperDef for SimpleHelper {</span>
-<span class="doccomment">//!   fn call(&amp;self, h: &amp;Helper, _: &amp;Handlebars, rc: &amp;mut RenderContext) -&gt; Result&lt;(), RenderError&gt; {</span>
+<span class="doccomment">//!   fn call(&amp;self, h: &amp;Helper, _: &amp;Handlebars, rc: &amp;mut RenderContext) -&gt; HelperResult {</span>
 <span class="doccomment">//!     let param = h.param(0).unwrap();</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//!     try!(rc.writer.write(&quot;1st helper: &quot;.as_bytes()));</span>
@@ -577,7 +578,7 @@
 <span class="doccomment">//! }</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! // implement via bare function</span>
-<span class="doccomment">//! fn another_simple_helper (h: &amp;Helper, _: &amp;Handlebars, rc: &amp;mut RenderContext) -&gt; Result&lt;(), RenderError&gt; {</span>
+<span class="doccomment">//! fn another_simple_helper (h: &amp;Helper, _: &amp;Handlebars, rc: &amp;mut RenderContext) -&gt; HelperResult {</span>
 <span class="doccomment">//!     let param = h.param(0).unwrap();</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//!     try!(rc.writer.write(&quot;2nd helper: &quot;.as_bytes()));</span>
@@ -592,7 +593,7 @@
 <span class="doccomment">//!   handlebars.register_helper(&quot;another-simple-helper&quot;, Box::new(another_simple_helper));</span>
 <span class="doccomment">//!   // via closure</span>
 <span class="doccomment">//!   handlebars.register_helper(&quot;closure-helper&quot;,</span>
-<span class="doccomment">//!       Box::new(|h: &amp;Helper, r: &amp;Handlebars, rc: &amp;mut RenderContext| -&gt; Result&lt;(), RenderError&gt;{</span>
+<span class="doccomment">//!       Box::new(|h: &amp;Helper, r: &amp;Handlebars, rc: &amp;mut RenderContext| -&gt; HelperResult {</span>
 <span class="doccomment">//!           let param = h.param(0).unwrap();</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//!           try!(rc.writer.write(&quot;3rd helper: &quot;.as_bytes()));</span>
@@ -612,7 +613,7 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! #### Built-in Helpers</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! * `{{#raw}} ... {{/raw}}` escape handlebars expression within the block</span>
+<span class="doccomment">//! * `{{{{#raw}}}} ... {{{{/raw}}}}` escape handlebars expression within the block</span>
 <span class="doccomment">//! * `{{#if ...}} ... {{else}} ... {{/if}}` if-else block</span>
 <span class="doccomment">//! * `{{#unless ...}} ... {{else}} .. {{/unless}}` if-not-else block</span>
 <span class="doccomment">//! * `{{#each ...}} ... {{/each}}` iterates over an array or object. Handlebar-rust doesn&#39;t support mustach iteration syntax so use this instead.</span>
@@ -628,21 +629,21 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//!</span>
 
-<span class="attribute">#<span class="op">!</span>[<span class="ident">allow</span>(<span class="ident">dead_code</span>)]</span>
-<span class="attribute">#<span class="op">!</span>[<span class="ident">recursion_limit</span> <span class="op">=</span> <span class="string">&quot;200&quot;</span>]</span>
+<span class="attribute">#![<span class="ident">allow</span>(<span class="ident">dead_code</span>)]</span>
+<span class="attribute">#![<span class="ident">recursion_limit</span> <span class="op">=</span> <span class="string">&quot;200&quot;</span>]</span>
 
-<span class="attribute">#[<span class="ident">macro_use</span>]</span>
-<span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">log</span>;
-<span class="attribute">#[<span class="ident">macro_use</span>]</span>
-<span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">quick_error</span>;
-<span class="attribute">#[<span class="ident">macro_use</span>]</span>
-<span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">pest</span>;
 <span class="attribute">#[<span class="ident">macro_use</span>]</span>
 <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">lazy_static</span>;
-
+<span class="attribute">#[<span class="ident">macro_use</span>]</span>
+<span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">log</span>;
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="attribute">#[<span class="ident">macro_use</span>]</span>
 <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">maplit</span>;
+<span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">pest</span>;
+<span class="attribute">#[<span class="ident">macro_use</span>]</span>
+<span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">pest_derive</span>;
+<span class="attribute">#[<span class="ident">macro_use</span>]</span>
+<span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">quick_error</span>;
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="attribute">#[<span class="ident">macro_use</span>]</span>
 <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">serde_derive</span>;
@@ -655,12 +656,13 @@
 
 <span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::<span class="ident">template</span>::<span class="ident">Template</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::<span class="ident">error</span>::{<span class="ident">RenderError</span>, <span class="ident">TemplateError</span>, <span class="ident">TemplateFileError</span>, <span class="ident">TemplateRenderError</span>};
-<span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::<span class="ident">registry</span>::{<span class="ident">EscapeFn</span>, <span class="ident">no_escape</span>, <span class="ident">html_escape</span>, <span class="ident">Registry</span> <span class="kw">as</span> <span class="ident">Handlebars</span>};
-<span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::<span class="ident">render</span>::{<span class="ident">Renderable</span>, <span class="ident">Evaluable</span>, <span class="ident">RenderContext</span>, <span class="ident">Helper</span>, <span class="ident">ContextJson</span>,
-                       <span class="ident">Directive</span> <span class="kw">as</span> <span class="ident">Decorator</span>};
-<span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::<span class="ident">helpers</span>::<span class="ident">HelperDef</span>;
+<span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::<span class="ident">registry</span>::{<span class="ident">html_escape</span>, <span class="ident">no_escape</span>, <span class="ident">EscapeFn</span>, <span class="ident">Registry</span> <span class="kw">as</span> <span class="ident">Handlebars</span>};
+<span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::<span class="ident">render</span>::{<span class="ident">ContextJson</span>, <span class="ident">Directive</span> <span class="kw">as</span> <span class="ident">Decorator</span>, <span class="ident">Evaluable</span>, <span class="ident">Helper</span>, <span class="ident">RenderContext</span>,
+                       <span class="ident">Renderable</span>};
+<span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::<span class="ident">helpers</span>::{<span class="ident">HelperDef</span>, <span class="ident">HelperResult</span>};
 <span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::<span class="ident">directives</span>::<span class="ident">DirectiveDef</span> <span class="kw">as</span> <span class="ident">DecoratorDef</span>;
-<span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::<span class="ident">context</span>::{<span class="ident">Context</span>, <span class="ident">JsonRender</span>, <span class="ident">to_json</span>};
+<span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::<span class="ident">context</span>::{<span class="ident">to_json</span>, <span class="ident">Context</span>, <span class="ident">JsonRender</span>};
+<span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::<span class="ident">support</span>::<span class="ident">str</span>::<span class="ident">StringWriter</span>;
 
 <span class="kw">mod</span> <span class="ident">grammar</span>;
 <span class="kw">mod</span> <span class="ident">template</span>;
