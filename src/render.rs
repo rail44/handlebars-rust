@@ -10,6 +10,7 @@ use serde_json::value::Value as Json;
 use template::{BlockParam, Directive as DirectiveTemplate, HelperTemplate, Parameter, Template,
                TemplateElement, TemplateMapping};
 use template::TemplateElement::*;
+use typemap::CloneMap;
 use registry::Registry;
 use context::{Context, JsonRender};
 use helpers::HelperDef;
@@ -39,6 +40,7 @@ pub struct RenderContext<'a> {
     /// root template name
     pub root_template: Option<String>,
     pub disable_escape: bool,
+    pub extensions: CloneMap,
 }
 
 impl<'a> RenderContext<'a> {
@@ -46,6 +48,7 @@ impl<'a> RenderContext<'a> {
     pub fn new(
         ctx: Context,
         local_helpers: &'a mut HashMap<String, Rc<Box<HelperDef + 'static>>>,
+        extensions: CloneMap,
         w: &'a mut Write,
     ) -> RenderContext<'a> {
         RenderContext {
@@ -61,6 +64,7 @@ impl<'a> RenderContext<'a> {
             current_template: None,
             root_template: None,
             disable_escape: false,
+            extensions,
         }
     }
 
@@ -79,6 +83,7 @@ impl<'a> RenderContext<'a> {
             local_helpers: self.local_helpers,
             context: self.context.clone(),
             writer: self.writer,
+            extensions: self.extensions.clone(),
         }
     }
 
@@ -97,6 +102,7 @@ impl<'a> RenderContext<'a> {
             local_helpers: self.local_helpers,
             context: ctx,
             writer: self.writer,
+            extensions: self.extensions.clone(),
         }
     }
 
@@ -737,12 +743,13 @@ impl Evaluable for TemplateElement {
 
 #[test]
 fn test_raw_string() {
+    use typemap::TypeMap;
     let r = Registry::new();
     let mut sw = StringWriter::new();
     let ctx = Context::null();
     let mut hlps = HashMap::new();
     {
-        let mut rc = RenderContext::new(ctx, &mut hlps, &mut sw);
+        let mut rc = RenderContext::new(ctx, &mut hlps, TypeMap::custom(), &mut sw);
         let raw_string = RawString("<h1>hello world</h1>".to_string());
 
         raw_string.render(&r, &mut rc).ok().unwrap();
@@ -752,6 +759,7 @@ fn test_raw_string() {
 
 #[test]
 fn test_expression() {
+    use typemap::TypeMap;
     let r = Registry::new();
     let mut sw = StringWriter::new();
     let mut hlps = HashMap::new();
@@ -760,7 +768,7 @@ fn test_expression() {
     m.insert("hello".to_string(), value);
     let ctx = Context::wraps(&m).unwrap();
     {
-        let mut rc = RenderContext::new(ctx, &mut hlps, &mut sw);
+        let mut rc = RenderContext::new(ctx, &mut hlps, TypeMap::custom(), &mut sw);
         let element = Expression(Parameter::Name("hello".into()));
 
         element.render(&r, &mut rc).ok().unwrap();
@@ -771,6 +779,7 @@ fn test_expression() {
 
 #[test]
 fn test_html_expression() {
+    use typemap::TypeMap;
     let r = Registry::new();
     let mut sw = StringWriter::new();
     let mut hlps = HashMap::new();
@@ -779,7 +788,7 @@ fn test_html_expression() {
     m.insert("hello".to_string(), value.to_string());
     let ctx = Context::wraps(&m).unwrap();
     {
-        let mut rc = RenderContext::new(ctx, &mut hlps, &mut sw);
+        let mut rc = RenderContext::new(ctx, &mut hlps, TypeMap::custom(), &mut sw);
         let element = HTMLExpression(Parameter::Name("hello".into()));
         element.render(&r, &mut rc).ok().unwrap();
     }
@@ -789,6 +798,7 @@ fn test_html_expression() {
 
 #[test]
 fn test_template() {
+    use typemap::TypeMap;
     let r = Registry::new();
     let mut sw = StringWriter::new();
     let mut hlps = HashMap::new();
@@ -798,7 +808,7 @@ fn test_template() {
     let ctx = Context::wraps(&m).unwrap();
 
     {
-        let mut rc = RenderContext::new(ctx, &mut hlps, &mut sw);
+        let mut rc = RenderContext::new(ctx, &mut hlps, TypeMap::custom(), &mut sw);
         let mut elements: Vec<TemplateElement> = Vec::new();
 
         let e1 = RawString("<h1>".to_string());
@@ -827,11 +837,12 @@ fn test_template() {
 #[test]
 fn test_render_context_promotion_and_demotion() {
     use context::to_json;
+    use typemap::TypeMap;
     let mut sw = StringWriter::new();
     let ctx = Context::null();
     let mut hlps = HashMap::new();
 
-    let mut render_context = RenderContext::new(ctx, &mut hlps, &mut sw);
+    let mut render_context = RenderContext::new(ctx, &mut hlps, TypeMap::custom(), &mut sw);
 
     render_context.set_local_var("@index".to_string(), to_json(&0));
 

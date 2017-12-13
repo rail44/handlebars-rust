@@ -45,6 +45,7 @@ mod test {
     use render::{Evaluable, RenderContext};
     use support::str::StringWriter;
     use std::collections::HashMap;
+    use typemap::TypeMap;
 
     #[test]
     fn test_inline() {
@@ -59,7 +60,7 @@ mod test {
         let ctx = Context::null();
         let mut hlps = HashMap::new();
 
-        let mut rc = RenderContext::new(ctx, &mut hlps, &mut sw);
+        let mut rc = RenderContext::new(ctx, &mut hlps, TypeMap::custom(), &mut sw);
         t0.elements[0].eval(&hbs, &mut rc).unwrap();
 
         assert!(rc.get_partial(&"hello".to_owned()).is_some());

@@ -13,6 +13,7 @@ use context::Context;
 use helpers::{self, HelperDef};
 use directives::{self, DirectiveDef};
 use support::str::StringWriter;
+use typemap::{CloneMap, TypeMap, Key};
 use error::{RenderError, TemplateError, TemplateFileError, TemplateRenderError};
 
 
@@ -56,6 +57,7 @@ pub struct Registry {
     templates: HashMap<String, Template>,
     helpers: HashMap<String, Box<HelperDef + 'static>>,
     directives: HashMap<String, Box<DirectiveDef + 'static>>,
+    extensions: CloneMap,
     escape_fn: EscapeFn,
     source_map: bool,
 }
@@ -66,6 +68,7 @@ impl Registry {
             templates: HashMap::new(),
             helpers: HashMap::new(),
             directives: HashMap::new(),
+            extensions: TypeMap::custom(),
             escape_fn: Box::new(html_escape),
             source_map: true,
         };
@@ -192,6 +195,12 @@ impl Registry {
         self.escape_fn = Box::new(html_escape);
     }
 
+    pub fn register_extension<K>(&mut self, val: K::Value) -> Option<K::Value>
+        where K: Key, K::Value: Clone
+    {
+        self.extensions.insert::<K>(val)
+    }
+
     /// Get a reference to the current *escape fn*.
     pub fn get_escape_fn(&self) -> &Fn(&str) -> String {
         &*self.escape_fn
@@ -256,7 +265,7 @@ impl Registry {
             .and_then(|t| {
                 let ctx = try!(Context::wraps(data));
                 let mut local_helpers = HashMap::new();
-                let mut render_context = RenderContext::new(ctx, &mut local_helpers, writer);
+                let mut render_context = RenderContext::new(ctx, &mut local_helpers, self.extensions.clone(), writer);
                 render_context.root_template = t.name.clone();
                 t.render(self, &mut render_context)
             })
@@ -295,7 +304,7 @@ impl Registry {
         let tpl = try!(Template::compile2(template_string, self.source_map));
         let ctx = try!(Context::wraps(data));
         let mut local_helpers = HashMap::new();
-        let mut render_context = RenderContext::new(ctx, &mut local_helpers, writer);
+        let mut render_context = RenderContext::new(ctx, &mut local_helpers, self.extensions.clone(), writer);
         tpl.render(self, &mut render_context)
             .map_err(TemplateRenderError::from)
     }
